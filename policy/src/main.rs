@@ -18,8 +18,8 @@ use bullet_cuda_backend::CudaDevice;
 use crate::data::MontyDataLoader;
 
 fn main() {
-    let hl = 1024;
-    let dataloader = MontyDataLoader::new("data/output(3).bin", 4096, 4, 4);
+    let hl = 2048;
+    let dataloader = MontyDataLoader::new("data/output(4).bin", 4096, 4, 4);
 
     let device = CudaDevice::new(0).unwrap();
 
@@ -31,11 +31,11 @@ fn main() {
     let mut trainer = Trainer { optimiser, state: () };
 
     let save_rate = 10;
-    let end_superbatch = 150;
+    let end_superbatch = 200;
     let initial_lr = 0.001;
     let final_lr = 0.00001;
 
-    let steps = TrainingSteps { batch_size: 16384, batches_per_superbatch: 6104, start_superbatch: 1, end_superbatch };
+    let steps = TrainingSteps { batch_size: 16384, batches_per_superbatch: 6104, start_superbatch: 181, end_superbatch };
 
     let schedule = TrainingSchedule {
         steps,
@@ -50,6 +50,8 @@ fn main() {
         }),
     };
 
+     _ = trainer.optimiser.load_from_checkpoint("checkpoints/net21-180");
+
     trainer
         .train_custom(
             schedule,
@@ -58,7 +60,7 @@ fn main() {
             |trainer, superbatch| {
                 if superbatch % save_rate == 0 || superbatch == steps.end_superbatch {
                     println!("Saving Checkpoint");
-                    let dir = format!("checkpoints/net14{superbatch}");
+                    let dir = format!("checkpoints/net21-{superbatch}");
                     let _ = std::fs::create_dir(&dir);
                     trainer.optimiser.write_to_checkpoint(&dir).unwrap();
                     model::save_quantised(&trainer.optimiser.graph, &format!("{dir}/quantised.bin")).unwrap();
